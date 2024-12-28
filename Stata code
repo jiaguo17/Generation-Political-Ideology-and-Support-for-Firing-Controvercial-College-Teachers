@@ -1,0 +1,211 @@
+use "GSS2021.dta"
+append using  "GSS2022.dta"
+save "GSS21-22a.dta"
+
+*teaching variables*
+recode colath (4=0) (5=1), gen (colatheist)
+recode colmil (4=0) (5=1), gen (colmilitarist)
+recode colrac (4=0) (5=1), gen (colracist)
+recode colmslm (4=0) (5=1), gen (colmuslim)
+recode colcom (5=0) (4=1), gen (colcommunist)
+replace colcommunist=1 if colcomy==1
+replace colcommunist=0 if colcomy==2
+recode colcomy (1/2=1) (.i=0), gen (colcomversion)
+
+recode colhomo (4=0) (5=1), gen (colgay)
+
+recode age (18/29=1) (30/45=2) (46/60=3) (61/75=4) (76/89=5), generate (generation)
+label define generationla 1 "Age: 18-29" 2 "30-45" 3 "46-60" 4 "61-75" 5 "76+"
+label values generation generationla
+
+recode relig (1=1) (2=2) (3=3) (4=4) (5/13=5), generate  (relig5) 
+
+recode mode (4=1) (1/3=0), generate (webmode) 
+
+recode polviews (1/3=1) (4=2) (5/7=3),generate (polviews3)
+label define polviewsl 1 "Liberal" 2 "Moderate" 3 "Conservative"
+label values polviews polviewsl
+ 
+recode sex (1=0) (2=1), generate (female)
+recode hispanic (1=0) (2 / 50=1), generate (hispanicid)
+
+recode race (2=1) (1=0) (3=0) , generate (black)
+replace black=0 if hispanicid==1
+
+recode race (2=0) (1=1) (3=0) , generate (white)
+replace white=0 if hispanicid==1
+
+recode race (2=0) (3=1) (1=0) , generate (otherrace)
+replace otherrace=0 if hispanicid==1
+
+svyset vpsu [weight=wtssnrps], strata (vstrat) vce(robust)
+
+****
+*comparing moderates and extreme liberals and conservatives
+*svy: logistic colatheist female black otherrace hispanicid ib1.degree i.polviews ib3.generation i.relig5 i.year i.webmode polviews#generation
+*margins generation, at(polviews= (1))  ciopt (color "lightblue")saving (veryliberal, replace)
+*marginsplot
+
+*svy: logistic colatheist female black otherrace hispanicid ib1.degree i.polviews ib3.generation i.relig5 i.year i.webmode polviews#generation
+*margins generation, at(polviews= (4)) saving (moderate, replace)
+*marginsplot, ciopt (color (gs8)) plot1opts (lcolor (gs8) mcolor (gs8)) 
+ 
+*svy: logistic colatheist female black otherrace hispanicid ib1.degree i.polviews ib3.generation i.relig5 i.year i.webmode polviews#generation
+*margins generation, at(polviews= (7)) saving (veryconserv, replace)
+*marginsplot, marginsplot, ciopt (color "red")
+
+*combomarginsplot  veryliberal  moderate veryconserv, title ("Atheist") ytitle ("") xtitle("")  ylabel(.1(.1).9, labsize (small) ) xlabel (, labsize (small)) plot( , label("Extremely Liberal" "Moderate" "Extremely Conservative")) plot1opts (lcolor (blue)  mcolor (blue)) plot2opts (lcolor (gs8)  mcolor (gs8)) ci2opt(color (gs8)) plot3opts (lcolor (red)  mcolor (red)) 
+
+
+*  area plots of the above
+*atheist
+svy: logistic colatheist female black otherrace hispanicid ib1.degree ib4.polviews ib3.generation i.relig5 i.year i.webmode polviews#generation
+outreg2 using polgen7.xls, replace
+margins generation, at(polviews= (1))  saving (veryliberal, replace)
+marginsplot, recastci(rarea) ciopt(color(%20)) 
+
+svy: logistic colatheist female black otherrace hispanicid ib1.degree ib4.polviews ib3.generation i.relig5 i.year i.webmode polviews#generation
+margins generation, at(polviews= (4)) saving (moderate, replace)
+marginsplot, ciopt (color (gs8)) plot1opts (lcolor (gs8) mcolor (gs8)) 
+ 
+svy: logistic colatheist female black otherrace hispanicid ib1.degree ib4.polviews ib3.generation i.relig5 i.year i.webmode polviews#generation
+margins generation, at(polviews= (7)) saving (veryconserv, replace)
+marginsplot,  ciopt(color (red %20)) recastci(rarea) plotopts (lcolor (black) mcolor (black)) 
+
+combomarginsplot  veryliberal  moderate veryconserv, title ("Atheist", size (small)) ytitle ("") xtitle("")  ylabel(.1(.1).8, labsize (small) ) xlabel (, labsize (small)) plot( , label("Extremely Liberal" "Moderate" "Extremely Conservative")) recastci(rarea) plot1opts (lcolor (blue)  ) ci1opt(color(%20)) ci2opt(color (gs6%20)) ci3opt(color("red%20")) plot2opts (lcolor (gs2)  mcolor (gs2))  plot3opts (lcolor (red)  mcolor (red))  
+graph save expolatheist, replace
+
+*racist 
+svy: logistic colracist female black otherrace hispanicid ib1.degree ib4.polviews ib3.generation i.relig5 i.year i.webmode polviews#generation
+outreg2 using polgen7.xls, append
+margins generation, at(polviews= (1))  saving (colracistveryliberal, replace)
+marginsplot, recastci(rarea) ciopt(color(%20)) 
+
+svy: logistic colracist female black otherrace hispanicid ib1.degree ib4.polviews ib3.generation i.relig5 i.year i.webmode polviews#generation
+margins generation, at(polviews= (4)) saving (colracistmoderate, replace)
+marginsplot, ciopt (color (gs8)) plot1opts (lcolor (gs8) mcolor (gs8)) 
+ 
+svy: logistic colracist female black otherrace hispanicid ib1.degree ib4.polviews ib3.generation i.relig5 i.year i.webmode polviews#generation
+margins generation, at(polviews= (7)) saving (colracistveryconserv, replace)
+marginsplot,  ciopt(color (red %20)) recastci(rarea) plotopts (lcolor (black) mcolor (black)) 
+
+combomarginsplot  colracistveryliberal  colracistmoderate colracistveryconserv, title ("Racist", size (small)) ytitle ("") xtitle("")  ylabel(.3(.1).9, labsize (small) ) xlabel (, labsize (small)) plot( , label("Extremely Liberal" "Moderate" "Extremely Conservative")) recastci(rarea) plot1opts (lcolor (blue)  ) ci1opt(color(%20)) ci2opt(color (gs6%20)) ci3opt(color("red%20")) plot2opts (lcolor (gs2)  mcolor (gs2))  plot3opts (lcolor (red)  mcolor (red))  
+graph save expolracist, replace
+
+*gay 
+svy: logistic colgay female black otherrace hispanicid ib1.degree ib4.polviews ib3.generation i.relig5 i.year i.webmode polviews#generation
+outreg2 using polgen7.xls, append
+margins generation, at(polviews= (1))  saving (colgayveryliberal, replace)
+marginsplot, recastci(rarea) ciopt(color(%20)) 
+
+svy: logistic colgay female black otherrace hispanicid ib1.degree ib4.polviews ib3.generation i.relig5 i.year i.webmode polviews#generation
+margins generation, at(polviews= (4)) saving (colgaymoderate, replace)
+marginsplot, ciopt (color (gs8)) plot1opts (lcolor (gs8) mcolor (gs8)) 
+ 
+svy: logistic colgay female black otherrace hispanicid ib1.degree ib4.polviews ib3.generation i.relig5 i.year i.webmode polviews#generation
+margins generation, at(polviews= (7)) saving (colgayveryconserv, replace)
+marginsplot,  ciopt(color (red %20)) recastci(rarea) plotopts (lcolor (black) mcolor (black)) 
+
+combomarginsplot  colgayveryliberal  colgaymoderate colgayveryconserv, title ("Gay / Homosexual" , size (small)) ytitle ("") xtitle("")  ylabel(.1(.1).5, labsize (small) ) xlabel (, labsize (small)) plot( , label("Extremely Liberal" "Moderate" "Extremely Conservative")) recastci(rarea) plot1opts (lcolor (blue)  ) ci1opt(color(%20)) ci2opt(color (gs6%20)) ci3opt(color("red%20")) plot2opts (lcolor (gs2)  mcolor (gs2))  plot3opts (lcolor (red)  mcolor (red))  
+graph save expolgay, replace
+
+
+*Islamist 
+svy: logistic colmuslim female black otherrace hispanicid ib1.degree ib4.polviews ib3.generation i.relig5 i.year i.webmode polviews#generation
+outreg2 using polgen7.xls, append
+margins generation, at(polviews= (1))  saving (colmuslimveryliberal, replace)
+marginsplot, recastci(rarea) ciopt(color(%20)) 
+
+svy: logistic colmuslim female black otherrace hispanicid ib1.degree ib4.polviews ib3.generation i.relig5 i.year i.webmode polviews#generation
+outreg2 using polgen.xls, append
+margins generation, at(polviews= (4)) saving (colmuslimmoderate, replace)
+marginsplot, ciopt (color (gs8)) plot1opts (lcolor (gs8) mcolor (gs8)) 
+ 
+svy: logistic colmuslim female black otherrace hispanicid ib1.degree ib4.polviews ib3.generation i.relig5 i.year i.webmode polviews#generation
+outreg2 using polgen.xls, append
+margins generation, at(polviews= (7)) saving (colmuslimveryconserv, replace)
+marginsplot,  ciopt(color (red %20)) recastci(rarea) plotopts (lcolor (black) mcolor (black)) 
+
+combomarginsplot  colmuslimveryliberal  colmuslimmoderate colmuslimveryconserv, title ("Anti-American Islamist", size (small)) ytitle ("") xtitle("")  ylabel(.4(.1).9, labsize (small) ) xlabel (, labsize (small)) plot( , label("Extremely Liberal" "Moderate" "Extremely Conservative")) recastci(rarea) plot1opts (lcolor (blue)  ) ci1opt(color(%20)) ci2opt(color (gs6%20)) ci3opt(color("red%20")) plot2opts (lcolor (gs2)  mcolor (gs2))  plot3opts (lcolor (red)  mcolor (red))  
+graph save expolislamist, replace
+
+
+*Communist 
+svy: logistic colcommunist female black otherrace hispanicid ib1.degree ib4.polviews ib3.generation i.relig5 i.year i.webmode polviews#generation i.colcomversion
+outreg2 using polgen7.xls, append
+margins generation, at(polviews= (1))  saving (colcommunistveryliberal, replace)
+marginsplot, recastci(rarea) ciopt(color(%20)) 
+
+svy: logistic colcommunist female black otherrace hispanicid ib1.degree ib4.polviews ib3.generation i.relig5 i.year i.webmode polviews#generation i.colcomversion
+margins generation, at(polviews= (4)) saving (colcommunistmoderate, replace)
+marginsplot, ciopt (color (gs8)) plot1opts (lcolor (gs8) mcolor (gs8)) 
+ 
+svy: logistic colcommunist female black otherrace hispanicid ib1.degree ib4.polviews ib3.generation i.relig5 i.year i.webmode polviews#generation i.colcomversion
+margins generation, at(polviews= (7)) saving (colcommunistveryconserv, replace)
+marginsplot,  ciopt(color (red %20)) recastci(rarea) plotopts (lcolor (black) mcolor (black)) 
+
+combomarginsplot  colcommunistveryliberal  colcommunistmoderate colcommunistveryconserv, title ("Communist", size (small)) ytitle ("") xtitle("")  ylabel(.1(.1).7, labsize (small) ) xlabel (, labsize (small)) plot( , label("Extremely Liberal" "Moderate" "Extremely Conservative")) recastci(rarea) plot1opts (lcolor (blue)  ) ci1opt(color(%20)) ci2opt(color (gs6%20)) ci3opt(color("red%20")) plot2opts (lcolor (gs2)  mcolor (gs2))  plot3opts (lcolor (red)  mcolor (red))  
+
+graph save expolcommunist, replace
+
+*Militarist 
+svy: logistic colmilitarist female black otherrace hispanicid ib1.degree ib4.polviews ib3.generation i.relig5 i.year i.webmode polviews#generation
+outreg2 using polgen7.xls, append
+margins generation, at(polviews= (1))  saving (colmilitaristveryliberal, replace)
+marginsplot, recastci(rarea) ciopt(color(%20)) 
+
+svy: logistic colmilitarist female black otherrace hispanicid ib1.degree ib4.polviews ib3.generation i.relig5 i.year i.webmode polviews#generation
+margins generation, at(polviews= (4)) saving (colmilitaristmoderate, replace)
+marginsplot, ciopt (color (gs6)) plot1opts (lcolor (gs2) mcolor (gs2)) 
+ 
+svy: logistic colmilitarist female black otherrace hispanicid ib1.degree ib4.polviews ib3.generation i.relig5 i.year i.webmode polviews#generation
+margins generation, at(polviews= (7)) saving (colmilitaristveryconserv, replace)
+marginsplot,  ciopt(color (red %20)) recastci(rarea) plotopts (lcolor (black) mcolor (black)) 
+
+combomarginsplot  colmilitaristveryliberal  colmilitaristmoderate colmilitaristveryconserv, title ("Militarist", size (small)) ytitle ("") xtitle("")  ylabel(.2(.1).9, labsize (small) ) xlabel (, labsize (small)) plot( , label("Extremely Liberal" "Moderate" "Extremely Conservative")) recastci(rarea) plot1opts (lcolor (blue)  ) ci1opt(color(%20)) ci2opt(color (gs6%20)) ci3opt(color("red%20")) plot2opts (lcolor (gs2)  mcolor (gs2))  plot3opts (lcolor (red)  mcolor (red))  legend(rows(1))
+graph save expolmilitarist, replace
+
+grc1leg2 expolatheist.gph expolracist.gph  expolgay.gph expolislamist.gph expolcommunist.gph expolmilitarist.gph, title("Predicted Probrobability of Supporting Firing" "a College Teacher who is:", size (small)) col (2) ysize (10) legendfrom (expolmilitarist.gph) note ("Figure 2. Note: Data are from the 2021-22 US General Social Surveys. The predicted probabilities shown here result from multivariate binomial" " regression models (N ranges from 2,358-4,424) with controls for respondents and gender, ethno-racial identity," "religious affiliation, education and year and mode. Shaded areas reflect 95% confidence intervals. Political views are self-reported. " "This figure focuses on those describing themselves as extreme liberals, extreme conservatives, or moderates. " "Full Results are available included in the online supplement.", color(gs6) size(tiny)  place (center) linegap(.5) box bcolor(gs15) just(left) margin(l+4 t+1 b+1)) 
+graph save suport-for-firing-teacher-extremes&moderates, replace
+
+**** Here are plots of liberals, moderates and conservatives in broad categories
+
+svy: logistic colatheist female black otherrace hispanicid ib1.degree ib2.polviews3 ib3.generation i.relig5 i.year i.webmode polviews3#generation
+outreg2 using pol3gen.xls, replace
+margins generation#polviews3, saving (colatheistpolc, replace)
+marginsplot, title ("Atheist", size (small)) ytitle ("") xtitle("")  ylabel(.1(.1).9, labsize (small) ) xlabel (, labsize (small)) plot( , label("Liberal" "Moderate" "Conservative")) recastci(rarea) plot1opts (lcolor (blue)  ) ci1opt(color(%20)) ci2opt(color (gs6%20)) ci3opt(color("red%20")) plot2opts (lcolor (gs2)  mcolor (gs2))  plot3opts (lcolor (red)  mcolor (red))  
+graph save colatheistpol, replace
+
+
+svy: logistic colracist female black otherrace hispanicid ib1.degree ib2.polviews3 ib3.generation i.relig5 i.year i.webmode polviews3#generation
+outreg2 using pol3gen.xls, append
+margins generation#polviews3, saving (colracistpol, replace)
+marginsplot, title ("Racist", size (small)) ytitle ("") xtitle("")  ylabel(.1(.1).9, labsize (small)  ) xlabel (, labsize (small)) plot( , label("Liberal" "Moderate" "Conservative"))  recastci(rarea) plot1opts (lcolor (blue)  ) ci1opt(color(%20)) ci2opt(color (gs6%20)) ci3opt(color("red%20")) plot2opts (lcolor (gs2)  mcolor (gs2))  plot3opts (lcolor (red)  mcolor (red)) 
+graph save colracistpol, replace
+
+svy: logistic colgay female black otherrace hispanicid ib1.degree ib2.polviews3 ib3.generation i.relig5 i.year i.webmode polviews3#generation
+outreg2 using pol3gen.xls, append
+margins generation#polviews3, saving (colgaypol, replace)
+marginsplot, title ("Gay / Homosexual", size (small)) ytitle ("") xtitle("")  ylabel(.1(.1).9, labsize (small)  ) xlabel (, labsize (small)) plot( , label("Liberal" "Moderate" "Conservative"))  recastci(rarea) plot1opts (lcolor (blue)  ) ci1opt(color(%20)) ci2opt(color (gs6%20)) ci3opt(color("red%20")) plot2opts (lcolor (gs2)  mcolor (gs2))  plot3opts (lcolor (red)  mcolor (red)) 
+graph save colgaypol, replace
+
+svy: logistic colmuslim female black otherrace hispanicid ib1.degree ib2.polviews3 ib3.generation i.relig5 i.year i.webmode polviews3#generation
+outreg2 using pol3gen.xls, append
+margins generation#polviews3, saving (colmuslimistpol, replace)
+marginsplot, title ("Anti-American Islamist", size (small)) ytitle ("") xtitle("")  ylabel(.1(.1).9, labsize (small)  ) xlabel (, labsize (small)) plot( , label("Liberal" "Moderate" "Conservative")) recastci(rarea) plot1opts (lcolor (blue)  ) ci1opt(color(%20)) ci2opt(color (gs6%20)) ci3opt(color("red%20")) plot2opts (lcolor (gs2)  mcolor (gs2))  plot3opts (lcolor (red)  mcolor (red)) 
+graph save colmuslimistpol, replace
+
+svy: logistic colcommunist female black otherrace hispanicid ib1.degree ib2.polviews3 ib3.generation i.relig5 i.year i.webmode polviews3#generation i.colcomversion
+outreg2 using pol3gen.xls, append
+margins generation#polviews3, saving (colcommunistpol, replace)
+marginsplot, title ("Communist", size (small)) ytitle ("") xtitle("")  ylabel(.1(.1).9, labsize (small)  ) xlabel (, labsize (small)) plot( , label("Liberal" "Moderate" "Conservative"))  recastci(rarea) plot1opts (lcolor (blue)  ) ci1opt(color(%20)) ci2opt(color (gs6%20)) ci3opt(color("red%20")) plot2opts (lcolor (gs2)  mcolor (gs2))  plot3opts (lcolor (red)  mcolor (red)) 
+graph save colcommunistpol, replace
+
+svy: logistic colmilitarist female black otherrace hispanicid ib1.degree ib2.polviews3 ib3.generation i.relig5 i.year i.webmode polviews3#generation
+outreg2 using pol3gen.xls, append
+margins generation#polviews3, saving (colmilitaristpol, replace)
+marginsplot, title ("Militarist", size (small)) ytitle ("") xtitle("")  ylabel(.1(.1).9, labsize (small)  ) xlabel (, labsize (small)) plot( , label("Liberal" "Moderate" "Conservative"))  recastci(rarea) plot1opts (lcolor (blue)  ) ci1opt(color(%20)) ci2opt(color (gs6%20)) ci3opt(color("red%20")) plot2opts (lcolor (gs2)  mcolor (gs2))  plot3opts (lcolor (red)  mcolor (red)) legend(rows(1))
+graph save colmilitaristpol, replace
+
+grc1leg2 colatheistpol.gph colracistpol.gph  colgaypol.gph colmuslimistpol.gph colcommunistpol.gph colmilitaristpol.gph, title("Predicted Probrobability of Supporting Firing" "a College Teacher who is:", size (small)) col (2) ysize (12) legendfrom (colmilitaristpol.gph)  note ("Figure 1. Note: Data are from the 2021-22 US General Social Surveys. The predicted probabilities shown here result from multivariate" " binomial regression models (N ranges from 2,358-4,424) with controls for respondents and gender, ethno-racial identity," "religious affiliation, education and year and mode. Shaded areas reflect 95% confidence intervals. Political views are self-reported, " "with Liberals including those who identify as extremely and slightly liberal, and Conservatives including those who " "identify as extremely and slightly conservative. Full results are available in the online supplement.", color(gs6) size(tiny)  place (center) linegap(.5) box bcolor(gs15) just(left) margin(l+4 t+1 b+1)) 
+graph save suport-for-firing-teacher-inc-notextremestest, replace
